@@ -39,6 +39,7 @@ namespace Zakzoqa.EditorTools
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel25;
 
             SetUpBootScene();
+            StoreCatalogSetup.CreateIfMissing();
             AssetDatabase.SaveAssets();
             Debug.Log("Zakzoqa: project settings applied.");
         }

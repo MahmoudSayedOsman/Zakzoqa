@@ -21,18 +21,33 @@ namespace Zakzoqa
             ReloadAfterSaveChanged();
         }
 
-        // The data half of a reset, without leaving the scene. Purchases are NOT progress: every
-        // entitlement the player paid for is carried across the wipe and granted again.
+        // The data half of a reset, without leaving the scene. Purchases are NOT progress: every key
+        // under the purchases prefix is carried across the wipe exactly — each entitlement the player
+        // paid for, and the store's record of coin-pack orders already paid, without which a
+        // re-delivered order would pay its coins a second time.
         //
         // Coins bought with money are progress and ARE wiped. The reset screen must say so before
-        // the player confirms (Decisions §6).
+        // the player confirms (Decisions §12.5).
         public static void WipeProgress()
         {
-            List<string> owned = Entitlements.Owned();
+            List<(string key, Prefs.Kind kind, int i, float f, string s)> purchases = new List<(string, Prefs.Kind, int, float, string)>();
+            foreach (KeyValuePair<string, Prefs.Kind> e in Prefs.Keys)
+            {
+                if (!e.Key.StartsWith(SaveKeys.EntitlementPrefix, StringComparison.Ordinal) || !Prefs.HasKey(e.Key)) continue;
+                purchases.Add((e.Key, e.Value, Prefs.GetInt(e.Key), Prefs.GetFloat(e.Key), Prefs.GetString(e.Key)));
+            }
 
             Prefs.DeleteAll();
 
-            foreach (string id in owned) Entitlements.Grant(id);
+            foreach (var p in purchases)
+            {
+                switch (p.kind)
+                {
+                    case Prefs.Kind.Int: Prefs.SetInt(p.key, p.i); break;
+                    case Prefs.Kind.Float: Prefs.SetFloat(p.key, p.f); break;
+                    default: Prefs.SetString(p.key, p.s); break;
+                }
+            }
 
             // The empty save is the current format, and it has to beat the cloud's, or the next
             // launch would find the cloud further along and quietly put everything back.

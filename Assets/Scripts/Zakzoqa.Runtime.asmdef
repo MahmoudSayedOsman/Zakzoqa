@@ -21,6 +21,11 @@
     "defineConstraints": [],
     "versionDefines": [
         {
+            "name": "com.google.ads.mobile",
+            "expression": "11.0.0",
+            "define": "GOOGLE_MOBILE_ADS"
+        },
+        {
             "name": "com.unity.purchasing",
             "expression": "5.0.0",
             "define": "UNITY_PURCHASING"

@@ -4,6 +4,7 @@
     "references": [
         "Zakzoqa.Runtime",
         "Zakzoqa.Editor",
+        "Zakzoqa.Tests.Shared",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.InputSystem"

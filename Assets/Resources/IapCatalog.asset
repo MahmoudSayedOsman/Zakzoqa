@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be1c439e9b8fff24bbce34069df9ac6d, type: 3}
+  m_Name: IapCatalog
+  m_EditorClassIdentifier: Zakzoqa.Runtime::Zakzoqa.IapCatalog
+  products:
+  - productId: coins_small
+    kind: 0
+    displayNameKey: store.coins_small
+    fallbackPriceLabel: $0.99
+    entitlement: 
+    coinGrant: 500
+    badgeKey: 
+  - productId: coins_medium
+    kind: 0
+    displayNameKey: store.coins_medium
+    fallbackPriceLabel: $1.99
+    entitlement: 
+    coinGrant: 1200
+    badgeKey: 
+  - productId: coins_large
+    kind: 0
+    displayNameKey: store.coins_large
+    fallbackPriceLabel: $4.99
+    entitlement: 
+    coinGrant: 3000
+    badgeKey: store.badge.best_value
+  - productId: coin_doubler
+    kind: 1
+    displayNameKey: store.coin_doubler
+    fallbackPriceLabel: $2.99
+    entitlement: CoinDoubler
+    coinGrant: 0
+    badgeKey: 
+  - productId: remove_ads
+    kind: 1
+    displayNameKey: store.remove_ads
+    fallbackPriceLabel: $2.99
+    entitlement: RemoveAds
+    coinGrant: 0
+    badgeKey: 

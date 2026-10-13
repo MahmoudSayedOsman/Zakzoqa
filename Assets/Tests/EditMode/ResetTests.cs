@@ -1,49 +1,19 @@
-using System;
-using System.Collections.Generic;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace Zakzoqa.Tests
 {
     // "Reset progress" (SaveManager.WipeProgress). Purchases are not progress: a player who paid for
     // something keeps it through a reset. Shadow Escape protected the one purchase it sold by name;
-    // Zakzoqa sells several, so every entitlement must survive, including ones added later.
-    //
-    // A wipe really does delete every PlayerPrefs key, so the whole file is captured raw first and
-    // written back raw at the end.
+    // Zakzoqa sells several, so every purchase record must survive, including ones added later.
     public class ResetTests
     {
-        Dictionary<string, (Prefs.Kind kind, string text, int i, float f)> before;
+        SaveSandbox sandbox;
 
         [SetUp]
-        public void SetUp()
-        {
-            Prefs.ForgetCache();
-            SaveGuard.EnsureLoaded();
-            before = new Dictionary<string, (Prefs.Kind, string, int, float)>();
-            foreach (KeyValuePair<string, Prefs.Kind> e in Prefs.Keys)
-                before[e.Key] = (e.Value, PlayerPrefs.GetString(e.Key, ""), PlayerPrefs.GetInt(e.Key, 0), PlayerPrefs.GetFloat(e.Key, 0f));
-            before[Prefs.IndexKey] = (Prefs.Kind.String, PlayerPrefs.GetString(Prefs.IndexKey, ""), 0, 0f);
-            before[SaveGuard.GuardKey] = (Prefs.Kind.String, PlayerPrefs.GetString(SaveGuard.GuardKey, ""), 0, 0f);
-        }
+        public void SetUp() => sandbox = SaveSandbox.Capture();
 
         [TearDown]
-        public void TearDown()
-        {
-            PlayerPrefs.DeleteAll();
-            foreach (var e in before)
-            {
-                switch (e.Value.kind)
-                {
-                    case Prefs.Kind.Int: PlayerPrefs.SetInt(e.Key, e.Value.i); break;
-                    case Prefs.Kind.Float: PlayerPrefs.SetFloat(e.Key, e.Value.f); break;
-                    default: PlayerPrefs.SetString(e.Key, e.Value.text); break;
-                }
-            }
-            PlayerPrefs.Save();
-            Prefs.ForgetCache();
-            SaveGuard.EnsureLoaded();
-        }
+        public void TearDown() => sandbox.Restore();
 
         [Category("P0")]
         [Test]
@@ -64,6 +34,21 @@ namespace Zakzoqa.Tests
             Assert.AreEqual(0, Prefs.GetInt(SaveKeys.TotalStars), "the stars survived a reset.");
             Assert.AreEqual(0, Prefs.GetInt(SaveKeys.Coins), "the coins survived a reset.");
             Assert.IsFalse(SaveGuard.Untrusted, "a reset left the save untrusted.");
+        }
+
+        // The store's record of coin-pack orders already paid. Wiped, a re-delivered order would pay
+        // its coins a second time.
+        [Category("P0")]
+        [Test]
+        public void AReset_KeepsTheRecordOfPaidOrders()
+        {
+            string paidOrders = SaveKeys.EntitlementPrefix + "PaidOrders";
+            Prefs.SetString(paidOrders, "GPA.1|GPA.2");
+
+            SaveManager.WipeProgress();
+            Prefs.ForgetCache();
+
+            Assert.AreEqual("GPA.1|GPA.2", Prefs.GetString(paidOrders));
         }
 
         [Category("P0")]

@@ -279,6 +279,20 @@
 | **التحقق من شراء الكوينز على السيرفر** | Shadow Escape كان بيبيع حاجة مرة واحدة بس، فالمتجر كان كفاية. لكن زقزوقة **بتبيع كوينز**، ووثيقة `Anti-Cheat.md` في Shadow Escape بتقول إن التحقق على السيرفر (Cloud Function) هو "الحل الحقيقي لألعاب بتبيع عملة". **لازم يتعمل قبل الإطلاق.** |
 | **الكوينز المشتراة بعد الـ Reset** | دلوقتي الـ Reset بيمسحها لأنها محسوبة تقدم. يا إما شاشة الـ Reset تحذّر بوضوح، يا إما الكوينز المشتراة تتحفظ لوحدها. |
 
+## 12.6 مطلوب من صاحب المشروع قبل أول Build على Android
+
+نفس حساب Google Play وAdMob بتوع Shadow Escape، بس **كل حاجة هنا جديدة لزقزوقة**:
+
+| المطلوب | فين | بيتحط فين في المشروع |
+|---|---|---|
+| تطبيق `com.mmsosoft.zakzoqa` | Play Console | — |
+| المنتجات الخمسة بنفس الـ IDs: `coins_small` و`coins_medium` و`coins_large` و`coin_doubler` و`remove_ads` | Play Console > Monetize > Products | لازم تطابق `Resources/IapCatalog.asset` |
+| **License Key** | Play Console > Monetization setup | Unity: Services > In-App Purchasing > Receipt Obfuscator. **ومن غيره التحقق من الإيصالات بيكون مقفول** |
+| تطبيق زقزوقة في AdMob، ومعاه **App ID** | AdMob > Apps | Assets > Google Mobile Ads > Settings |
+| 3 وحدات إعلانية: Rewarded للـ revive، وRewarded للـ double_reward، وInterstitial | AdMob > Ad units | `AdMobIds` في `AdPlatform.cs`. ولحد ما يتحطوا، الإعلانات بتكون إعلانات تجريبية |
+| **Target audience = أطفال**، والاشتراك في Families | Play Console > App content | — |
+| في AdMob: **"Treat as child-directed"** لتطبيق زقزوقة | AdMob > App settings | الكود بيبعتها في كل طلب، والإعداد ده تأكيد إضافي |
+
 ---
 
 ## 13. سجل التغييرات
