@@ -29,19 +29,34 @@ namespace Zakzoqa.Tests
         }
 
         [Test]
-        public void BootScene_IsFirstAndCameraIsAtTheLockedSize()
+        public void BootScene_IsFirstInTheBuild()
         {
             var scenes = EditorBuildSettings.scenes;
             Assert.IsNotEmpty(scenes);
             Assert.AreEqual(ProjectSetup.BootScenePath, scenes[0].path);
+        }
 
-            EditorSceneManager.OpenScene(ProjectSetup.BootScenePath, OpenSceneMode.Single);
-            var cams = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
-            Assert.IsNotEmpty(cams, "Boot has no camera");
-            foreach (var cam in cams)
+        // Scenes are loaded by name (Scenes.cs). A name missing from the build fails at runtime, on a
+        // player's phone, so it fails here instead.
+        [Test]
+        public void EveryNamedScene_IsInTheBuild_WithItsCameraAtTheLockedSize()
+        {
+            var inBuild = new System.Collections.Generic.HashSet<string>();
+            foreach (var s in EditorBuildSettings.scenes) if (s.enabled) inBuild.Add(s.path);
+
+            foreach (string name in Scenes.All)
             {
-                Assert.IsTrue(cam.orthographic, cam.name + " is not orthographic");
-                Assert.AreEqual(WorldScale.OrthographicSize, cam.orthographicSize, 0.0001f, cam.name);
+                string path = ProjectSetup.ScenePath(name);
+                Assert.IsTrue(inBuild.Contains(path), $"{name} is loaded by name but is not in the build.");
+
+                EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                var cams = Object.FindObjectsByType<Camera>();
+                Assert.IsNotEmpty(cams, name + " has no camera");
+                foreach (var cam in cams)
+                {
+                    Assert.IsTrue(cam.orthographic, $"{name}/{cam.name} is not orthographic");
+                    Assert.AreEqual(WorldScale.OrthographicSize, cam.orthographicSize, 0.0001f, $"{name}/{cam.name}");
+                }
             }
         }
 

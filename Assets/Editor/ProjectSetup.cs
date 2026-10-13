@@ -43,23 +43,33 @@ namespace Zakzoqa.EditorTools
             Debug.Log("Zakzoqa: project settings applied.");
         }
 
-        // The template ships SampleScene. It becomes Boot, the first scene in the build, with the
-        // camera at the locked orthographic size.
+        public static string ScenePath(string name) => $"Assets/Scenes/{name}.unity";
+
+        // The template ships SampleScene. It becomes Boot, the first scene in the build. Every other
+        // scene in Scenes.All that does not exist yet starts as a copy of Boot, so it has the same 2D
+        // lighting and camera. All of them go in the build, Boot first, cameras at the locked size.
         static void SetUpBootScene()
         {
             if (!File.Exists(BootScenePath) && File.Exists(SampleScenePath))
                 AssetDatabase.MoveAsset(SampleScenePath, BootScenePath);
 
-            var scene = EditorSceneManager.OpenScene(BootScenePath, OpenSceneMode.Single);
-            foreach (var cam in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
+            var build = new EditorBuildSettingsScene[Scenes.All.Length];
+            for (int i = 0; i < Scenes.All.Length; i++)
             {
-                cam.orthographic = true;
-                cam.orthographicSize = WorldScale.OrthographicSize;
-                EditorUtility.SetDirty(cam);
-            }
-            EditorSceneManager.SaveScene(scene);
+                string path = ScenePath(Scenes.All[i]);
+                if (!File.Exists(path)) AssetDatabase.CopyAsset(BootScenePath, path);
 
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(BootScenePath, true) };
+                var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                foreach (var cam in Object.FindObjectsByType<Camera>())
+                {
+                    cam.orthographic = true;
+                    cam.orthographicSize = WorldScale.OrthographicSize;
+                    EditorUtility.SetDirty(cam);
+                }
+                EditorSceneManager.SaveScene(scene);
+                build[i] = new EditorBuildSettingsScene(path, true);
+            }
+            EditorBuildSettings.scenes = build;
         }
     }
 }
