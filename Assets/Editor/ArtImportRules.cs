@@ -16,6 +16,11 @@ namespace Zakzoqa.EditorTools
 
             var importer = (TextureImporter)assetImporter;
             importer.textureType = TextureImporterType.Sprite;
+            // One file, one sprite, the size of its canvas. Unity 6 imports new sprites as Multiple
+            // and slices them to their visible edges, which made a 240-pixel balloon 238 — the size
+            // drift Shadow Escape's art suffered, caught by TransformationTests. Characters drawn in
+            // parts for bones come in as PSB through the PSD importer, not through here.
+            importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = WorldScale.PixelsPerUnit;
             importer.mipmapEnabled = false;
             importer.filterMode = FilterMode.Bilinear;

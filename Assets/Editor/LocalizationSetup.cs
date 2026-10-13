@@ -66,12 +66,21 @@ namespace Zakzoqa.EditorTools
 
             // Saved choice, then the phone's language, then English. The package's own PlayerPrefs
             // selector is left out: the choice goes through Prefs like every other setting.
+            // Rewritten only when wrong: rewriting them every run gives them new ids, and every run
+            // would show up in git as a change nobody made.
             List<IStartupLocaleSelector> selectors = settings.GetStartupLocaleSelectors();
-            selectors.Clear();
-            selectors.Add(new SavedLocaleSelector());
-            selectors.Add(new SystemLocaleSelector());
-            selectors.Add(new SpecificLocaleSelector { LocaleId = new LocaleIdentifier(Language.English) });
-            EditorUtility.SetDirty(settings);
+            bool right = selectors.Count == 3
+                && selectors[0] is SavedLocaleSelector
+                && selectors[1] is SystemLocaleSelector
+                && selectors[2] is SpecificLocaleSelector last && last.LocaleId.Code == Language.English;
+            if (!right)
+            {
+                selectors.Clear();
+                selectors.Add(new SavedLocaleSelector());
+                selectors.Add(new SystemLocaleSelector());
+                selectors.Add(new SpecificLocaleSelector { LocaleId = new LocaleIdentifier(Language.English) });
+                EditorUtility.SetDirty(settings);
+            }
 
             Locale english = EnsureLocale(Language.English);
             Locale arabic = EnsureLocale(Language.Arabic);

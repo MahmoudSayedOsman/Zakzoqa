@@ -86,6 +86,7 @@ namespace Zakzoqa.Tests
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 var importer = (TextureImporter)AssetImporter.GetAtPath(path);
                 Assert.AreEqual(WorldScale.PixelsPerUnit, importer.spritePixelsPerUnit, 0.0001f, path);
+                Assert.AreEqual(SpriteImportMode.Single, importer.spriteImportMode, $"{path} is sliced: its sprite is not the size of its canvas.");
             }
         }
     }

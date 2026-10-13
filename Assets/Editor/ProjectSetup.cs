@@ -43,6 +43,7 @@ namespace Zakzoqa.EditorTools
             StoreCatalogSetup.CreateIfMissing();
             LocalizationSetup.CreateIfMissing();
             UiSetup.CreateIfMissing();
+            PlaygroundSetup.CreateIfMissing();
             AssetDatabase.SaveAssets();
             Debug.Log("Zakzoqa: project settings applied.");
         }
