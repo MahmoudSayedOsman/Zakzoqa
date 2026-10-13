@@ -60,6 +60,24 @@ namespace Zakzoqa.Tests
             }
         }
 
+        // The editor adds packages on its own (opening the Services window, a template prompt). Twice
+        // they reached a commit unnoticed. These ones have no place in a children's 2D mobile game:
+        // a second ad network and analytics are Families policy questions, the rest are other
+        // platforms' tools.
+        [Test]
+        public void TheManifest_HasNoPackageThisGameRuledOut()
+        {
+            string manifest = System.IO.File.ReadAllText("Packages/manifest.json");
+            foreach (string ruledOut in new[]
+            {
+                "com.unity.ads", "com.unity.analytics", "com.unity.services.analytics",
+                "com.unity.collab-proxy", "com.unity.multiplayer.center", "com.unity.microsoft.gdk",
+                "com.unity.ai.navigation", "com.unity.xr.legacyinputhelpers", "com.unity.visualscripting",
+            })
+                StringAssert.DoesNotContain($"\"{ruledOut}\"", manifest,
+                    $"{ruledOut} was added to the project. If it is wanted, say why in Decisions.md and remove it from this list.");
+        }
+
         [Test]
         public void ArtImports_AtTheLockedPixelsPerUnit()
         {
