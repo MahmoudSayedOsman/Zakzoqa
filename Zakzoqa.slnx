@@ -1,0 +1,5 @@
+﻿<Solution>
+  <Project Path="Zakzoqa.Tests.EditMode.csproj" />
+  <Project Path="Zakzoqa.Editor.csproj" />
+  <Project Path="Zakzoqa.Runtime.csproj" />
+</Solution>

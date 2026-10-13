@@ -1,0 +1,30 @@
+{
+    "name": "Zakzoqa.Runtime",
+    "rootNamespace": "Zakzoqa",
+    "references": [
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
+        "Unity.Localization",
+        "Unity.Purchasing",
+        "Unity.Purchasing.SecurityCore",
+        "Unity.Purchasing.SecurityStub"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.purchasing",
+            "expression": "5.0.0",
+            "define": "UNITY_PURCHASING"
+        }
+    ],
+    "noEngineReferences": false
+}
