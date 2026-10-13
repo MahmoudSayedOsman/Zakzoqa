@@ -5,6 +5,8 @@
         "Zakzoqa.Runtime",
         "Zakzoqa.Editor",
         "Zakzoqa.Tests.Shared",
+        "Unity.Localization",
+        "Unity.Localization.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.InputSystem"

@@ -1,0 +1,82 @@
+/* Zakzoqa's base styles. Every panel gets these through ZakzoqaTheme.tss (Decisions §7).
+ *
+ * ARABIC. Every text element uses the Advanced Text Generator (HarfBuzz + ICU): letters join and
+ * lines wrap right to left on their own. Never put a line break in a string to make it fit.
+ *
+ * DIRECTION. Language.ApplyTo marks a screen's root RTL and gives it the "rtl" class in Arabic.
+ * Build screens left to right as usual, put things side by side in a ".row", and the rules at the
+ * bottom turn rows around and move text to the right. A picture that must point the other way in
+ * Arabic (a "back" arrow) gets the class "flip-in-rtl".
+ */
+
+:root {
+    -unity-font-definition: url("project://database/Assets/Fonts/NotoNaskhArabic%20SDF.asset");
+    font-size: 40px;
+    color: rgb(45, 40, 70);
+}
+
+.unity-text-element {
+    -unity-text-generator: advanced;
+}
+
+.row {
+    flex-direction: row;
+}
+
+.rtl .row {
+    flex-direction: row-reverse;
+}
+
+/* Text that is not centred starts on the reading side. */
+.rtl .unity-label {
+    -unity-text-align: upper-right;
+}
+
+.rtl .unity-button,
+.rtl .centered {
+    -unity-text-align: middle-center;
+}
+
+.rtl .flip-in-rtl {
+    scale: -1 1;
+}
+
+/* --- shared pieces ------------------------------------------------------------------------- */
+
+.screen {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(186, 228, 255);
+}
+
+.title {
+    font-size: 120px;
+    color: rgb(230, 60, 80);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin-bottom: 40px;
+}
+
+.big-button {
+    min-width: 520px;
+    height: 120px;
+    margin: 14px;
+    font-size: 56px;
+    border-radius: 60px;
+    border-width: 0;
+    background-color: rgb(255, 120, 140);
+    color: rgb(255, 255, 255);
+}
+
+.small-button {
+    height: 80px;
+    padding-left: 30px;
+    padding-right: 30px;
+    margin: 10px;
+    font-size: 36px;
+    border-radius: 40px;
+    border-width: 0;
+    background-color: rgb(255, 255, 255);
+    color: rgb(45, 40, 70);
+}

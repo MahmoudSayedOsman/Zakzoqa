@@ -1,0 +1,32 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Every word on screen comes from the "UI" table (LocalizationTests fails on a text="..." here). -->
+    <ui:VisualElement name="root" class="screen">
+        <ui:Label name="title" class="title">
+            <Bindings>
+                <UnityEngine.Localization.LocalizedString property="text" table="UI" entry="game.title" />
+            </Bindings>
+        </ui:Label>
+        <ui:Button name="play" class="big-button">
+            <Bindings>
+                <UnityEngine.Localization.LocalizedString property="text" table="UI" entry="menu.play" />
+            </Bindings>
+        </ui:Button>
+        <ui:VisualElement class="row">
+            <ui:Button name="store" class="small-button">
+                <Bindings>
+                    <UnityEngine.Localization.LocalizedString property="text" table="UI" entry="menu.store" />
+                </Bindings>
+            </ui:Button>
+            <ui:Button name="settings" class="small-button">
+                <Bindings>
+                    <UnityEngine.Localization.LocalizedString property="text" table="UI" entry="menu.settings" />
+                </Bindings>
+            </ui:Button>
+            <ui:Button name="language" class="small-button">
+                <Bindings>
+                    <UnityEngine.Localization.LocalizedString property="text" table="UI" entry="menu.switch_language" />
+                </Bindings>
+            </ui:Button>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

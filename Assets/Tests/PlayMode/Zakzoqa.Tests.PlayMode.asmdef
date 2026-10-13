@@ -4,6 +4,8 @@
     "references": [
         "Zakzoqa.Runtime",
         "Zakzoqa.Tests.Shared",
+        "Unity.Localization",
+        "Unity.ResourceManager",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.InputSystem"

@@ -38,10 +38,41 @@ namespace Zakzoqa.EditorTools
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel25;
 
+            AdvancedText = true;
             SetUpBootScene();
             StoreCatalogSetup.CreateIfMissing();
+            LocalizationSetup.CreateIfMissing();
+            UiSetup.CreateIfMissing();
             AssetDatabase.SaveAssets();
             Debug.Log("Zakzoqa: project settings applied.");
+        }
+
+        // UI Toolkit's Advanced Text Generator (Decisions §7): HarfBuzz and ICU, so Arabic letters
+        // join and lines wrap right to left without hand-placed line breaks. It is a project setting
+        // (Project Settings > UI Toolkit > Enable Advanced Text Generator) with no public API in
+        // 6000.4, so it is reached by name; if Unity renames it, this throws rather than silently
+        // leaving Arabic broken.
+        public static bool AdvancedText
+        {
+            get => (bool)AdvancedTextProperty().GetValue(null);
+            set => AdvancedTextProperty().SetValue(null, value);
+        }
+
+        static System.Reflection.PropertyInfo AdvancedTextProperty()
+        {
+            System.Type type = null;
+            foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (!asm.GetName().Name.StartsWith("UnityEditor")) continue;
+                foreach (var t in asm.GetTypes())
+                    if (t.Name == "UIToolkitProjectSettings") { type = t; break; }
+                if (type != null) break;
+            }
+            if (type == null)
+                throw new System.InvalidOperationException("UIToolkitProjectSettings not found: Unity moved the Advanced Text Generator setting.");
+            return type.GetProperty("enableAdvancedText",
+                       System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
+                ?? throw new System.InvalidOperationException("enableAdvancedText not found: Unity moved the Advanced Text Generator setting.");
         }
 
         public static string ScenePath(string name) => $"Assets/Scenes/{name}.unity";
