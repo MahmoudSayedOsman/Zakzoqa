@@ -44,6 +44,7 @@ namespace Zakzoqa.EditorTools
             LocalizationSetup.CreateIfMissing();
             UiSetup.CreateIfMissing();
             PlaygroundSetup.CreateIfMissing();
+            AirProtoSetup.CreateIfMissing();
             AssetDatabase.SaveAssets();
             Debug.Log("Zakzoqa: project settings applied.");
         }

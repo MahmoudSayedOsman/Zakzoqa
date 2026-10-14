@@ -76,8 +76,42 @@ namespace Zakzoqa
         public float puffForce = 9f;
         public float puffCooldown = 0.45f;
 
+        // ------------------------------------------------------------------------------------------
+        // PROTOTYPE: AIR CONTROL (Design.md §14). Off unless airControl is set, so the agreed balloon
+        // plays exactly as before. Kept or removed as a whole once the owner has played it.
+        // ------------------------------------------------------------------------------------------
+        [Header("PROTOTYPE: air control (Design.md §14)")]
+        public bool airControl = false;
+
+        // Let out: small, heavy, fits through gaps, breaks weak floors, ignores the wind, no floating.
+        public float smallDiameter = 0.6f;
+        public float smallGravityScale = 5f;
+        public float smallJumpHeight = 1.6f;
+        public float smallRunSpeed = 7f;
+
+        // Her size follows her air: full is full size, one unit left is this share of it. A hit is
+        // seen, not read off a gauge.
+        [Range(0.3f, 1f)] public float emptiestScale = 0.7f;
+
+        // How much the wind lifts her, big and small.
+        public float windLiftBig = 1f;
+        public float windLiftSmall = 0f;
+
+        // Landing small at this speed or faster breaks a weak floor.
+        public float breakSpeed = 7f;
+
+        // The jet: in the air, the ability lets air out in one burst and she shoots that way.
+        public float jetSpeed = 11f;
+        public float jetSeconds = 0.18f;
+        public float jetHeliumCost = 0.5f;
+        // 0 for the prototype: paying for a jet with her life was judged too harsh for children.
+        public int jetAirCost = 0;
+
+        // The launch speed for a full jump of `height` under `scale` gravity.
+        public static float JumpSpeedFor(float worldGravity, float scale, float height) =>
+            Mathf.Sqrt(2f * Mathf.Abs(worldGravity) * scale * height);
+
         // The launch speed for a full jump of jumpHeight under this shape's gravity.
-        public float JumpSpeed(float worldGravity) =>
-            Mathf.Sqrt(2f * Mathf.Abs(worldGravity) * gravityScale * jumpHeight);
+        public float JumpSpeed(float worldGravity) => JumpSpeedFor(worldGravity, gravityScale, jumpHeight);
     }
 }

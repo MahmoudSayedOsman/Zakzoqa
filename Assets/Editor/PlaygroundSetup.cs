@@ -126,16 +126,17 @@ namespace Zakzoqa.EditorTools
             EditorSceneManager.SaveScene(scene, PlaygroundPath);
         }
 
-        static void Block(string name, Vector2 at, Vector2 size)
+        internal static GameObject Block(string name, Vector2 at, Vector2 size)
         {
             GameObject go = new GameObject(name);
             go.transform.position = at;
             go.transform.localScale = new Vector3(size.x, size.y, 1);
             go.AddComponent<SpriteRenderer>().sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{PlaceholderDir}/block.png");
             go.AddComponent<BoxCollider2D>();
+            return go;
         }
 
-        static void PinAt(Vector2 at, float angle)
+        internal static void PinAt(Vector2 at, float angle)
         {
             GameObject go = new GameObject("Pin");
             go.transform.SetPositionAndRotation(at, Quaternion.Euler(0, 0, angle));
@@ -145,7 +146,7 @@ namespace Zakzoqa.EditorTools
             go.AddComponent<Pin>();
         }
 
-        static void HeliumAt(Vector2 at)
+        internal static void HeliumAt(Vector2 at)
         {
             GameObject go = new GameObject("Helium");
             go.transform.position = at;
@@ -155,7 +156,7 @@ namespace Zakzoqa.EditorTools
             go.AddComponent<HeliumPickup>();
         }
 
-        static void TapeAt(Vector2 at)
+        internal static void TapeAt(Vector2 at)
         {
             GameObject go = new GameObject("Tape");
             go.transform.position = at;
@@ -167,9 +168,9 @@ namespace Zakzoqa.EditorTools
 
         // --- placeholder drawing -------------------------------------------------------------------
 
-        delegate Color32 Paint(int x, int y, int w, int h);
+        internal delegate Color32 Paint(int x, int y, int w, int h);
 
-        static void Png(string name, int w, int h, Paint paint)
+        internal static void Png(string name, int w, int h, Paint paint)
         {
             string path = $"{PlaceholderDir}/{name}.png";
             if (File.Exists(path)) return;
@@ -183,9 +184,9 @@ namespace Zakzoqa.EditorTools
             Object.DestroyImmediate(tex);
         }
 
-        static readonly Color32 Clear = new Color32(0, 0, 0, 0);
+        internal static readonly Color32 Clear = new Color32(0, 0, 0, 0);
 
-        static bool InCircle(float x, float y, float cx, float cy, float r) => (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r;
+        internal static bool InCircle(float x, float y, float cx, float cy, float r) => (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r;
 
         static Color32 Balloon(int x, int y, int w, int h)
         {

@@ -29,7 +29,7 @@ namespace Zakzoqa
         // the next step uses them, so a press is never missed (a frame with no step) or counted twice
         // (two steps in one frame). Held state and the stick are simply the latest.
         InputFrame pending;
-        bool pendingJump, pendingAbility, pendingInteract;
+        bool pendingJump, pendingAbility, pendingInteract, pendingSize;
 
         float graceLeft, stunLeft;
 
@@ -56,6 +56,8 @@ namespace Zakzoqa
         public event Action<TransformationDef> Transformed;
         // Raised when she puffs, with the direction. The art and the sound listen.
         public event Action<Vector2> Puffed;
+        // PROTOTYPE: raised when she jets, with the direction.
+        public event Action<Vector2> Jetted;
 
         void Awake()
         {
@@ -105,6 +107,7 @@ namespace Zakzoqa
             pendingJump |= frame.JumpPressed;
             pendingAbility |= frame.AbilityPressed;
             pendingInteract |= frame.InteractPressed;
+            pendingSize |= frame.SizePressed;
         }
 
         public void Step(float dt)
@@ -121,7 +124,10 @@ namespace Zakzoqa
             frame.JumpPressed = pendingJump;
             frame.AbilityPressed = pendingAbility;
             frame.InteractPressed = pendingInteract;
-            pendingJump = pendingAbility = pendingInteract = false;
+            frame.SizePressed = pendingSize;
+            pendingJump = pendingAbility = pendingInteract = pendingSize = false;
+
+            if (frame.SizePressed && Def.airControl) SetSmall(!IsSmall);
 
             form?.Step(frame, dt);
         }
@@ -140,6 +146,7 @@ namespace Zakzoqa
             {
                 Air = new AirTank(def.airCapacity);
                 Air.Emptied += OnEmptied;
+                Air.Changed += _ => ApplyShape();
                 Helium = new HeliumTank(def.heliumCapacity);
             }
             else
@@ -148,18 +155,100 @@ namespace Zakzoqa
                 Helium.Resize(def.heliumCapacity);
             }
 
+            if (!def.airControl) IsSmall = false;
             rb.mass = def.mass;
-            rb.gravityScale = def.gravityScale;
             rb.linearDamping = 0f;
-            circle.radius = def.diameter * 0.5f;
             material.bounciness = def.bounciness;
             // A material's values are read when it is assigned.
             circle.sharedMaterial = null;
             circle.sharedMaterial = material;
+            ApplyShape();
 
             form = Forms.Create(def.kind);
             form.Enter(this);
             Transformed?.Invoke(def);
+        }
+
+        // --- PROTOTYPE: air control (Design.md §14) ----------------------------------------------
+        //
+        // Off unless the def has airControl: then IsSmall is always false, the sizes below are the
+        // def's own, and the agreed balloon plays exactly as before.
+
+        // Let out: small and heavy. Toggled by the size button.
+        public bool IsSmall { get; private set; }
+        public float Diameter { get; private set; }
+        public float GravityScale => rb.gravityScale;
+        public float RunSpeed => IsSmall ? Def.smallRunSpeed : Def.runSpeed;
+        public float JumpHeight => IsSmall ? Def.smallJumpHeight : Def.jumpHeight;
+        public bool CanFloat => !IsSmall;
+        public float WindLift => IsSmall ? Def.windLiftSmall : Def.windLiftBig;
+
+        // Raised after a size change, and when growing back was blocked (false: no room).
+        public event Action<bool> SizeChanged;
+        public event Action GrowBlocked;
+
+        // Returns whether it happened. Growing needs room: under a low ceiling she stays small.
+        public bool SetSmall(bool small)
+        {
+            if (Def == null || !Def.airControl || small == IsSmall) return false;
+            if (!small)
+            {
+                float grow = DiameterFor(false) * 0.5f - circle.radius;
+                if (!RoomFor(Position + Vector2.up * grow, DiameterFor(false) * 0.5f * 0.95f))
+                {
+                    GrowBlocked?.Invoke();
+                    return false;
+                }
+                // Grows upward from where she stands, not into the floor.
+                rb.position += Vector2.up * grow;
+                transform.position = rb.position;
+            }
+            IsSmall = small;
+            ApplyShape();
+            SizeChanged?.Invoke(small);
+            return true;
+        }
+
+        float DiameterFor(bool small)
+        {
+            float full = small ? Def.smallDiameter : Def.diameter;
+            if (!Def.airControl || Air == null) return full;
+            return full * Mathf.Lerp(Def.emptiestScale, 1f, Air.Fraction);
+        }
+
+        // Size, gravity and the art follow the current state: shape, small or big, how much air.
+        void ApplyShape()
+        {
+            if (Def == null) return;
+            Diameter = DiameterFor(IsSmall);
+            circle.radius = Diameter * 0.5f;
+            rb.gravityScale = IsSmall ? Def.smallGravityScale : Def.gravityScale;
+            // The art is drawn at Zakzoqa's full height (WorldScale); it is scaled to her size now.
+            float s = Diameter / WorldScale.ZakzoqaHeight;
+            foreach (Transform child in transform) child.localScale = new Vector3(s, s, 1f);
+        }
+
+        static readonly System.Collections.Generic.List<Collider2D> roomHits = new System.Collections.Generic.List<Collider2D>();
+
+        bool RoomFor(Vector2 centre, float radius)
+        {
+            ContactFilter2D solid = new ContactFilter2D { useTriggers = false };
+            Physics2D.OverlapCircle(centre, radius, solid, roomHits);
+            foreach (Collider2D c in roomHits)
+                if (c.attachedRigidbody != rb) return false;
+            return true;
+        }
+
+        // A wind zone pushing her: `acceleration` scaled by how much the wind takes her, no faster
+        // than `maxSpeed` along it.
+        public void Wind(Vector2 acceleration, float maxSpeed, float dt)
+        {
+            if (Def == null || IsPopped || WindLift <= 0f) return;
+            Vector2 v = rb.linearVelocity + acceleration * WindLift * dt;
+            Vector2 dir = acceleration.normalized;
+            float along = Vector2.Dot(v, dir);
+            if (along > maxSpeed) v -= dir * (along - maxSpeed);
+            rb.linearVelocity = v;
         }
 
         // --- what forms may do -------------------------------------------------------------------
@@ -168,6 +257,7 @@ namespace Zakzoqa
         public void AddVelocity(Vector2 delta) => rb.linearVelocity += delta;
         public void Face(float direction) { if (direction != 0f) Facing = Mathf.Sign(direction); }
         public void RaisePuffed(Vector2 direction) => Puffed?.Invoke(direction);
+        public void RaiseJetted(Vector2 direction) => Jetted?.Invoke(direction);
 
         // --- being hit ---------------------------------------------------------------------------
 

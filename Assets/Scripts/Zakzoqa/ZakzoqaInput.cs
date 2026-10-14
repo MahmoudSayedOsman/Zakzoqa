@@ -18,6 +18,8 @@ namespace Zakzoqa
         public bool AbilityPressed;
         // A door, a lever, someone to talk to.
         public bool InteractPressed;
+        // PROTOTYPE (Design.md §14): let air out or take it back in.
+        public bool SizePressed;
     }
 
     public interface IZakzoqaInput
@@ -29,8 +31,9 @@ namespace Zakzoqa
     // (Decisions §3: two arrows on the left, jump and ability on the right) arrive with the UI and
     // feed the same frame.
     //
-    // Keyboard: A/D or arrows to move, Space/W/Up to jump, J or X to puff, E to interact.
-    // Gamepad: left stick or d-pad, South to jump, West to puff, North to interact.
+    // Keyboard: A/D or arrows to move, Space/W/Up to jump, J or X to puff, E to interact,
+    // K or Shift to change size (prototype).
+    // Gamepad: left stick or d-pad, South to jump, West to puff, North to interact, RB to change size.
     public sealed class DeviceInput : IZakzoqaInput
     {
         public InputFrame Read()
@@ -46,6 +49,7 @@ namespace Zakzoqa
                 frame.JumpHeld |= k.spaceKey.isPressed || k.wKey.isPressed || k.upArrowKey.isPressed;
                 frame.AbilityPressed |= k.jKey.wasPressedThisFrame || k.xKey.wasPressedThisFrame;
                 frame.InteractPressed |= k.eKey.wasPressedThisFrame;
+                frame.SizePressed |= k.kKey.wasPressedThisFrame || k.leftShiftKey.wasPressedThisFrame;
             }
 
             Gamepad g = Gamepad.current;
@@ -57,6 +61,7 @@ namespace Zakzoqa
                 frame.JumpHeld |= g.buttonSouth.isPressed;
                 frame.AbilityPressed |= g.buttonWest.wasPressedThisFrame;
                 frame.InteractPressed |= g.buttonNorth.wasPressedThisFrame;
+                frame.SizePressed |= g.rightShoulder.wasPressedThisFrame;
             }
 
             frame.Move = Mathf.Clamp(frame.Move, -1f, 1f);

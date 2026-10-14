@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9061b8ea4740e8448971c82a4b6b60e, type: 3}
+  m_Name: Balloon_AirProto
+  m_EditorClassIdentifier: Zakzoqa.Runtime::Zakzoqa.TransformationDef
+  kind: 0
+  displayNameKey: form.balloon
+  airCapacity: 3
+  hitGraceSeconds: 1.2
+  hitStunSeconds: 0.25
+  knockback: 6
+  diameter: 1.2
+  mass: 1
+  gravityScale: 3
+  bounciness: 0
+  maxFallSpeed: 14
+  runSpeed: 6
+  groundAcceleration: 60
+  airAcceleration: 35
+  jumpHeight: 2.6
+  jumpCut: 0.45
+  coyoteTime: 0.1
+  jumpBuffer: 0.12
+  heliumCapacity: 1.5
+  floatFallSpeed: 1.2
+  puffReach: 1.6
+  puffForce: 9
+  puffCooldown: 0.45
+  airControl: 1
+  smallDiameter: 0.6
+  smallGravityScale: 5
+  smallJumpHeight: 1.6
+  smallRunSpeed: 7
+  emptiestScale: 0.7
+  windLiftBig: 1
+  windLiftSmall: 0
+  breakSpeed: 7
+  jetSpeed: 11
+  jetSeconds: 0.18
+  jetHeliumCost: 0.5
+  jetAirCost: 0
