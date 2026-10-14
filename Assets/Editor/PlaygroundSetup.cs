@@ -35,6 +35,7 @@ namespace Zakzoqa.EditorTools
             // The face is its own layer, shared by every transformation (Decisions §2, rule 1).
             Png("zakzoqa_face", body, body, Face);
             Png("pin", pinH / 2, pinH, Pin);
+            Png("helium", 100, 100, (x, y, w, h) => InCircle(x + .5f, y + .5f, w / 2f, h / 2f, w / 2f - 2) ? (InCircle(x, y, w * 0.35f, h * 0.65f, w * 0.12f) ? new Color32(255, 255, 255, 255) : new Color32(150, 220, 255, 230)) : Clear);
             Png("tape", 120, 60, (x, y, w, h) => new Color32(240, 205, 120, 255));
             Png("block", Ppu, Ppu, (x, y, w, h) => (x < 6 || y < 6 || x >= w - 6 || y >= h - 6) ? new Color32(120, 150, 200, 255) : new Color32(170, 200, 240, 255));
             AssetDatabase.Refresh();
@@ -92,7 +93,8 @@ namespace Zakzoqa.EditorTools
             cam.backgroundColor = new Color32(186, 228, 255, 255);
             camGo.transform.position = new Vector3(0, 0, -10);
             CameraFollow follow = camGo.AddComponent<CameraFollow>();
-            follow.minY = 0f;
+            follow.min = new Vector2(-4f, -1.5f);
+            follow.max = new Vector2(40f, 10f);
 
             // The 2D renderer lights every sprite; with no light at all they come out as dim
             // silhouettes. The template's scenes carry this light, an empty scene does not.
@@ -102,22 +104,24 @@ namespace Zakzoqa.EditorTools
             light.intensity = 1f;
 
             GameObject z = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
-            z.transform.position = new Vector3(0, -3.5f, 0);
-            follow.target = z.transform;
+            z.transform.position = new Vector3(-6f, -3.8f, 0);
+            follow.target = z.GetComponent<ZakzoqaBody>();
 
-            const float halfWidth = 4.5f, height = 60f;
-            Block("Floor", new Vector2(0, -5f), new Vector2(halfWidth * 2 + 2, 1));
-            Block("Wall L", new Vector2(-halfWidth - 0.5f, height / 2 - 5), new Vector2(1, height));
-            Block("Wall R", new Vector2(halfWidth + 0.5f, height / 2 - 5), new Vector2(1, height));
+            // Left to right: run and jump a small gap, pins on the ground with platforms over them,
+            // a gap too wide to jump that floating on helium crosses, then tape for the hurt.
+            Block("Floor A", new Vector2(-2f, -5f), new Vector2(14f, 1f));     // x -9..5
+            Block("Floor B", new Vector2(16f, -5f), new Vector2(16f, 1f));     // x 8..24, a 3-unit gap
+            Block("Platform 1", new Vector2(11.5f, -2.2f), new Vector2(3f, 0.5f));
+            Block("Platform 2", new Vector2(16f, -0.6f), new Vector2(3f, 0.5f));
+            Block("Floor C", new Vector2(40f, -5f), new Vector2(12f, 1f));     // x 34..46, a 10-unit gap
+            Block("Wall L", new Vector2(-9.5f, 5f), new Vector2(1f, 20f));
+            Block("Wall R", new Vector2(46.5f, 5f), new Vector2(1f, 20f));
 
-            for (int i = 0; i < 8; i++)
-            {
-                float y = 2f + i * 6f;
-                bool left = i % 2 == 0;
-                PinAt(new Vector2(left ? -halfWidth + 0.25f : halfWidth - 0.25f, y), left ? -90f : 90f);
-                if (i % 3 == 1) PinAt(new Vector2(0, y + 3f), 180f);
-                if (i % 2 == 1) TapeAt(new Vector2(left ? 2f : -2f, y + 1.5f));
-            }
+            float onGround = -4.5f + WorldScale.PinSoldierHeight * 0.5f;
+            foreach (float x in new[] { 12f, 12.5f, 13f, 15.5f, 16f, 16.5f }) PinAt(new Vector2(x, onGround), 0f);
+            HeliumAt(new Vector2(21f, -3.5f));
+            HeliumAt(new Vector2(29f, -1f));
+            TapeAt(new Vector2(38f, -3.8f));
 
             EditorSceneManager.SaveScene(scene, PlaygroundPath);
         }
@@ -139,6 +143,16 @@ namespace Zakzoqa.EditorTools
             PolygonCollider2D col = go.AddComponent<PolygonCollider2D>();
             col.isTrigger = true;
             go.AddComponent<Pin>();
+        }
+
+        static void HeliumAt(Vector2 at)
+        {
+            GameObject go = new GameObject("Helium");
+            go.transform.position = at;
+            go.AddComponent<SpriteRenderer>().sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{PlaceholderDir}/helium.png");
+            CircleCollider2D col = go.AddComponent<CircleCollider2D>();
+            col.isTrigger = true;
+            go.AddComponent<HeliumPickup>();
         }
 
         static void TapeAt(Vector2 at)

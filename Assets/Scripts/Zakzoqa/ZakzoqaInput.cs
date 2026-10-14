@@ -3,20 +3,21 @@ using UnityEngine.InputSystem;
 
 namespace Zakzoqa
 {
-    // What the player asked for this frame, in the game's own terms. Every transformation reads
-    // this and never a device: a new control scheme (a gamepad, tilt one day) is a new IZakzoqaInput,
-    // and no form changes.
+    // What the player asked for, in the game's own terms (Decisions §3: a classic platformer). Every
+    // transformation reads this and never a device: the on-screen buttons, a keyboard and a gamepad
+    // are all IZakzoqaInputs, and no form changes when one is added.
     public struct InputFrame
     {
-        // A tap or press began this frame.
-        public bool Press;
-        // The press came from the finger (or mouse), so PointerWorld says where. False for a key.
-        public bool PointerPress;
-        // Where, in world space. Meaningful only when PointerPress or Held.
-        public Vector2 PointerWorld;
-        public bool Held;
-        // -1..1 from keys: left and right. Zero on a touch screen.
-        public float Horizontal;
+        // -1 left .. 1 right.
+        public float Move;
+        // Began this frame. Latched by ZakzoqaBody until the next physics step uses it.
+        public bool JumpPressed;
+        // Held down: a higher jump, and floating on helium on the way down.
+        public bool JumpHeld;
+        // The transformation's ability. The balloon's is the puff.
+        public bool AbilityPressed;
+        // A door, a lever, someone to talk to.
+        public bool InteractPressed;
     }
 
     public interface IZakzoqaInput
@@ -24,41 +25,41 @@ namespace Zakzoqa
         InputFrame Read();
     }
 
-    // Touch on a phone, mouse or keyboard in the editor (Decisions §1, row 10: the Input System).
+    // Keyboard and gamepad: the editor, a PC, a controller on a phone. The on-screen buttons
+    // (Decisions §3: two arrows on the left, jump and ability on the right) arrive with the UI and
+    // feed the same frame.
     //
-    // ONE FINGER (Decisions §3): a tap anywhere is a press at that point; the form decides what a
-    // press means. The keyboard stands in for the finger: Space is a tap straight above Zakzoqa,
-    // and the arrows lean it.
+    // Keyboard: A/D or arrows to move, Space/W/Up to jump, J or X to puff, E to interact.
+    // Gamepad: left stick or d-pad, South to jump, West to puff, North to interact.
     public sealed class DeviceInput : IZakzoqaInput
     {
-        readonly Camera camera;
-
-        public DeviceInput(Camera camera) { this.camera = camera; }
-
         public InputFrame Read()
         {
             InputFrame frame = default;
 
-            Pointer pointer = Pointer.current;
-            if (pointer != null && camera != null)
+            Keyboard k = Keyboard.current;
+            if (k != null)
             {
-                frame.Press = frame.PointerPress = pointer.press.wasPressedThisFrame;
-                frame.Held = pointer.press.isPressed;
-                Vector2 screen = pointer.position.ReadValue();
-                frame.PointerWorld = camera.ScreenToWorldPoint(new Vector3(screen.x, screen.y, -camera.transform.position.z));
+                if (k.aKey.isPressed || k.leftArrowKey.isPressed) frame.Move -= 1f;
+                if (k.dKey.isPressed || k.rightArrowKey.isPressed) frame.Move += 1f;
+                frame.JumpPressed |= k.spaceKey.wasPressedThisFrame || k.wKey.wasPressedThisFrame || k.upArrowKey.wasPressedThisFrame;
+                frame.JumpHeld |= k.spaceKey.isPressed || k.wKey.isPressed || k.upArrowKey.isPressed;
+                frame.AbilityPressed |= k.jKey.wasPressedThisFrame || k.xKey.wasPressedThisFrame;
+                frame.InteractPressed |= k.eKey.wasPressedThisFrame;
             }
 
-            Keyboard keyboard = Keyboard.current;
-            if (keyboard != null)
+            Gamepad g = Gamepad.current;
+            if (g != null)
             {
-                float h = 0f;
-                if (keyboard.leftArrowKey.isPressed || keyboard.aKey.isPressed) h -= 1f;
-                if (keyboard.rightArrowKey.isPressed || keyboard.dKey.isPressed) h += 1f;
-                frame.Horizontal = h;
-                if (keyboard.spaceKey.wasPressedThisFrame) frame.Press = true;
-                if (keyboard.spaceKey.isPressed) frame.Held = true;
+                float x = g.leftStick.x.ReadValue() + g.dpad.x.ReadValue();
+                if (Mathf.Abs(x) > 0.25f) frame.Move += x;
+                frame.JumpPressed |= g.buttonSouth.wasPressedThisFrame;
+                frame.JumpHeld |= g.buttonSouth.isPressed;
+                frame.AbilityPressed |= g.buttonWest.wasPressedThisFrame;
+                frame.InteractPressed |= g.buttonNorth.wasPressedThisFrame;
             }
 
+            frame.Move = Mathf.Clamp(frame.Move, -1f, 1f);
             return frame;
         }
     }

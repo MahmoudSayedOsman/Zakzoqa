@@ -47,8 +47,13 @@ namespace Zakzoqa.Tests
             {
                 Assert.Greater(def.airCapacity, 0, def.name);
                 Assert.Greater(def.hitGraceSeconds, 0f, $"{def.name}: with no grace, a pin she touches empties her in one go.");
-                Assert.Greater(def.maxSpeed, 0f, def.name);
                 Assert.Greater(def.diameter, 0f, def.name);
+                Assert.Greater(def.runSpeed, 0f, def.name);
+                Assert.Greater(def.jumpHeight, def.diameter, $"{def.name}: she cannot jump over something her own height.");
+                Assert.Greater(def.maxFallSpeed, def.floatFallSpeed, $"{def.name}: floating would not slow her fall.");
+                Assert.Less(def.hitStunSeconds, def.hitGraceSeconds, $"{def.name}: she would be stunned past her grace, and hit again unable to move.");
+                Assert.Greater(def.coyoteTime, 0f, $"{def.name}: no coyote time; late jumps off ledges are lost.");
+                Assert.Greater(def.jumpBuffer, 0f, $"{def.name}: no jump buffer; early jumps before landing are lost.");
             }
         }
 

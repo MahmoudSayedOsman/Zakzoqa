@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace Zakzoqa
 {
-    // HOW ONE TRANSFORMATION PLAYS (Decisions §3). The body, the air and the damage are shared and
-    // live in ZakzoqaBody; a form only turns the player's input into forces. Adding the football is
-    // writing a FootballForm, not touching the balloon or the body.
+    // HOW ONE TRANSFORMATION PLAYS (Decisions §3). The body, the air, the helium, the ground check and
+    // being hit are shared and live in ZakzoqaBody; a form turns the player's input into movement.
+    // Adding the football is writing a FootballForm, not touching the balloon or the body.
     public interface IForm
     {
         FormKind Kind { get; }
@@ -13,6 +13,13 @@ namespace Zakzoqa
         void Exit();
         // Called every physics step, with the input gathered since the last one.
         void Step(InputFrame input, float dt);
+    }
+
+    // Anything the puff can push: enemies (knocked onto their backs), loose boxes, windmills. The
+    // puff only reports itself; what it does is the target's business.
+    public interface IPuffable
+    {
+        void Puffed(Vector2 direction, float force);
     }
 
     // The state machine's other half: which class plays which shape. A shape with a def but no form
@@ -31,22 +38,28 @@ namespace Zakzoqa
         }
     }
 
-    // THE SMALL BALLOON: float, puff, climb, dodge (Decisions §3, chapter 1).
+    // THE SMALL BALLOON: a classic platformer (Decisions §3).
     //
-    // She sinks slowly on her own (a little gravity, a lot of air resistance). Each tap is a puff
-    // upward, leaning towards the side the player tapped, so one finger steers: tap to her left and
-    // she rises to the left. Taps closer together than the cooldown count once.
+    // Run, and jump: hold for a full jump, tap for a hop. Forgiving the way platformers for every age
+    // are: a jump just after leaving a ledge still counts (coyote time), and one pressed just before
+    // landing happens on landing (buffer). Holding jump on the way down floats on helium, falling
+    // slowly until the helium runs out. The ability is the puff: it pushes whatever is in front of her.
     public sealed class BalloonForm : IForm
     {
+        static readonly System.Collections.Generic.List<Collider2D> PuffHits = new System.Collections.Generic.List<Collider2D>();
+
         ZakzoqaBody body;
-        float sinceLastPuff = float.PositiveInfinity;
+        float coyoteLeft, bufferLeft, puffReadyIn;
+        bool rising;
 
         public FormKind Kind => FormKind.Balloon;
+        public bool IsFloating { get; private set; }
 
         public void Enter(ZakzoqaBody body)
         {
             this.body = body;
-            sinceLastPuff = float.PositiveInfinity;
+            coyoteLeft = bufferLeft = puffReadyIn = 0f;
+            rising = IsFloating = false;
         }
 
         public void Exit() => body = null;
@@ -54,30 +67,73 @@ namespace Zakzoqa
         public void Step(InputFrame input, float dt)
         {
             TransformationDef def = body.Def;
-            sinceLastPuff += dt;
+            bool grounded = body.IsGrounded;
+            Vector2 v = body.Velocity;
 
-            if (input.Press && sinceLastPuff >= def.puffCooldown)
+            coyoteLeft = grounded ? def.coyoteTime : coyoteLeft - dt;
+            bufferLeft = input.JumpPressed ? def.jumpBuffer : bufferLeft - dt;
+            puffReadyIn -= dt;
+
+            // Running. Knocked back, the hit carries her for a moment before the player has her again.
+            if (!body.IsStunned)
             {
-                sinceLastPuff = 0f;
-                body.AddVelocity(PuffDirection(input) * def.puffStrength);
+                if (Mathf.Abs(input.Move) > 0.01f) body.Face(input.Move);
+                float accel = grounded ? def.groundAcceleration : def.airAcceleration;
+                v.x = Mathf.MoveTowards(v.x, input.Move * def.runSpeed, accel * dt);
             }
 
-            if (input.Horizontal != 0f)
-                body.AddVelocity(new Vector2(input.Horizontal * def.steerAcceleration * dt, 0f));
+            // Jumping.
+            if (bufferLeft > 0f && coyoteLeft > 0f && !body.IsStunned)
+            {
+                v.y = def.JumpSpeed(Physics2D.gravity.y);
+                bufferLeft = coyoteLeft = 0f;
+                rising = true;
+            }
+            if (rising && (v.y <= 0f || !input.JumpHeld))
+            {
+                if (v.y > 0f) v.y *= def.jumpCut;
+                rising = false;
+            }
+
+            // Floating: holding jump while falling, as long as there is helium.
+            // The caps are on the speed AFTER this step's gravity, which the physics adds once this
+            // returns; capping before it let her fall half again as fast as the asset says.
+            float gravityThisStep = Mathf.Abs(Physics2D.gravity.y) * def.gravityScale * dt;
+
+            // A fresh press in the air is a jump waiting to land first, and only becomes a float once
+            // the buffer has run out: floating at once slowed her so much that the waiting jump expired
+            // before she touched down, and a jump pressed just before landing was lost (tests caught it).
+            IsFloating = !grounded && input.JumpHeld && v.y < 0f && bufferLeft <= 0f && !body.Helium.IsEmpty;
+            if (IsFloating)
+            {
+                v.y = Mathf.Max(v.y, -def.floatFallSpeed + gravityThisStep);
+                body.Helium.Spend(dt);
+            }
+
+            v.y = Mathf.Max(v.y, -def.maxFallSpeed + gravityThisStep);
+            body.SetVelocity(v);
+
+            // The puff.
+            if (input.AbilityPressed && puffReadyIn <= 0f)
+            {
+                puffReadyIn = def.puffCooldown;
+                Puff(def);
+            }
         }
 
-        // Up, leaning towards where the finger is. Keys lean by the arrow held instead.
-        Vector2 PuffDirection(InputFrame input)
+        void Puff(TransformationDef def)
         {
-            float side = input.Horizontal;
-            if (input.PointerPress)
+            Vector2 dir = new Vector2(body.Facing, 0f);
+            Vector2 centre = body.Position + dir * (def.puffReach * 0.5f);
+            Vector2 size = new Vector2(def.puffReach, def.diameter);
+            Physics2D.OverlapBox(centre, size, 0f, ContactFilter2D.noFilter, PuffHits);
+            for (int i = 0; i < PuffHits.Count; i++)
             {
-                float dx = input.PointerWorld.x - body.Position.x;
-                // A tap within her own width is "straight up".
-                float halfWidth = body.Def.diameter * 0.5f;
-                side = Mathf.Abs(dx) <= halfWidth ? 0f : Mathf.Sign(dx);
+                if (PuffHits[i].attachedRigidbody == body.Rigidbody) continue;
+                foreach (IPuffable p in PuffHits[i].GetComponentsInParent<IPuffable>())
+                    p.Puffed(dir, def.puffForce);
             }
-            return new Vector2(side * body.Def.puffLean, 1f).normalized;
+            body.RaisePuffed(dir);
         }
     }
 }
